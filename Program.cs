@@ -1,4 +1,5 @@
 using ExampleLibrary;
+using WebApi.Middleware;
 
 namespace WebApi;
 

@@ -1,6 +1,6 @@
 ﻿using System.Reflection;
 
-namespace WebApi.Middleware.SwaggerFilters;
+namespace WebApi.Middleware;
 
 /// <summary>
 /// Include only valid properties for swagger schema definition.

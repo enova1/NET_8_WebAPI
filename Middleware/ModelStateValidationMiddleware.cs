@@ -1,4 +1,4 @@
-﻿namespace WebApi;
+﻿namespace WebApi.Middleware;
 
 /// <summary>
 /// Middleware for validating the model state.

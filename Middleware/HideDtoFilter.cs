@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc.ApiExplorer;
 
-namespace WebApi.Middleware.SwaggerFilters;
+namespace WebApi.Middleware;
 
 
 /// <summary>
