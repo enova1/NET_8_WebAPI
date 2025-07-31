@@ -1,6 +1,5 @@
 ﻿using ExampleLibrary;
 using Models.Employee;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 
 namespace WebApi.Controllers.v1;
