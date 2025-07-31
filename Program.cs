@@ -49,6 +49,7 @@ public static class Program
             options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 
+        builder.Services.AddScoped<IApplicationDbContext, ApplicationDbContext>();
         builder.Services.AddScoped<IEmployee, Employee>();
 
         // Add services to the container.
