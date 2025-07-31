@@ -1,7 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc.ModelBinding;
-using Microsoft.AspNetCore.Mvc;
-
-namespace WebApi;
+﻿namespace WebApi;
 
 /// <summary>
 /// Middleware for validating the model state.

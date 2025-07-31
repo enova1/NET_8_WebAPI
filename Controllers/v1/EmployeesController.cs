@@ -1,7 +1,6 @@
-﻿using DataAccess;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+﻿using ExampleLibrary;
 using Models.Employee;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 
 namespace WebApi.Controllers.v1;
@@ -14,12 +13,12 @@ namespace WebApi.Controllers.v1;
 [Route("v1/[controller]")]
 public class EmployeesController : Controller
 {
-    private readonly ApplicationDbContext _employeeDbContext;
+    private readonly IEmployee _employeeService;
 
     /// <inheritdoc />
-    public EmployeesController(ApplicationDbContext context)
+    public EmployeesController(IEmployee employee)
     {
-        _employeeDbContext = context;
+        _employeeService = employee;
     }
 
     /// <summary>
@@ -29,15 +28,8 @@ public class EmployeesController : Controller
     [HttpGet]
     public async Task<IActionResult> GetEmployeesTask()
     {
-        var employees = await _employeeDbContext.Employees!
-            .Include(e => e.EmployeePhones)
-            .Include(e => e.EmployeeAddresses)
-            .OrderBy(e => e.FirstName)
-            .ThenBy(e => e.LastName)
-            .Distinct()
-            .ToListAsync();
-
-        return employees.Count == 0 ? StatusCode(404, "No employees found.") : StatusCode(200, employees);
+        var employees = await _employeeService.GetEmployeesTask();
+        return employees.Count == 0 ? StatusCode(200, "No employees found.") : StatusCode(200, employees);
     }
 
     /// <summary>
@@ -50,16 +42,8 @@ public class EmployeesController : Controller
     [HttpGet("filterBy/")]
     public async Task<IActionResult> FilterEmployeesTask(string phone, string zipCode)
     {
-        var employees = await _employeeDbContext.Employees!
-            .Include(e => e.EmployeePhones)
-            .Include(e => e.EmployeeAddresses)
-            .Where(e => e.EmployeePhones != null && e.EmployeePhones.Any(p => p.PhoneNumber.Contains(phone)))
-            .Where(e => e.EmployeeAddresses != null && e.EmployeeAddresses.Any(a => a.ZipCode.Contains(zipCode)))
-            .OrderBy(e => e.FirstName)
-            .ThenBy(e => e.LastName)
-            .ToListAsync();
-
-        return employees.Count == 0 ? StatusCode(404, "No employees found.") : StatusCode(200, employees);
+        var employees = await _employeeService.FilterEmployeesTask(phone, zipCode);
+        return employees.Count == 0 ? StatusCode(200, "No employees found.") : StatusCode(200, employees);
     }
 
     /// <summary>
@@ -70,17 +54,16 @@ public class EmployeesController : Controller
     [HttpGet("averageEmployment/")]
     public async Task<IActionResult> EmployeesAverageLengthTask()
     {
-        var employees = await _employeeDbContext.Employees!
+        var data = await _employeeService.GetEmployeesTask();
+        var employees = data
             .Select(e => new
             {
                 FullName = $"{e.FirstName} {e.LastName}",
                 EarliestHireDate = e.HireDate,
                 LatestHireDate = e.HireDate,
                 AverageLengthOfEmployment = (DateTime.Now - e.HireDate).TotalDays / 365
-            })
-            .ToListAsync();
-
-        return employees.Count == 0 ? StatusCode(404, "No employees found.") : StatusCode(200, employees);
+            }).ToList();
+        return employees.Count == 0 ? StatusCode(200, "No employees found.") : StatusCode(200, employees);
     }
 
     /// <summary>
@@ -91,9 +74,10 @@ public class EmployeesController : Controller
     [HttpGet("id")]
     public async Task<IActionResult> GetEmployeeDetailsTask(int id)
     {
-        if (_employeeDbContext.Employees == null) return BadRequest(id);
-        var employees = await _employeeDbContext.Employees.FindAsync(id);
-        return employees == null ? NotFound(id) : StatusCode(200, employees);
+        if (id == 0) return BadRequest(id);
+        var data = await _employeeService.GetEmployeesTask();
+        var employees = data.Find(x => x.EmployeeId == id);
+        return employees == null ? StatusCode(200, "No employees found.") : StatusCode(200, employees);
     }
     
     /// <summary>
@@ -104,45 +88,14 @@ public class EmployeesController : Controller
     [HttpPost()]
     public async Task<IActionResult> CreateEmployee([FromBody] Employees employees)
     {
-        //TODO: Add the employee Create to EmployeeLibrary
         try
         {
-            _employeeDbContext.Add(employees);
-            await _employeeDbContext.SaveChangesAsync();
-
-            if (_employeeDbContext.Employees != null)
-            {
-                var saveData = await _employeeDbContext.Employees
-                    .Include(e => e.EmployeePhones)
-                    .Include(e => e.EmployeeAddresses)
-                    .FirstOrDefaultAsync(m => m.EmployeeId == employees.EmployeeId);
-
-                if (saveData == null)
-                {
-                    return NotFound();
-                }
-
-                if (employees.EmployeePhones != null)
-                    foreach (var number in employees.EmployeePhones)
-                    {
-                        saveData.EmployeePhones!.Add(number);
-                    }
-
-                if (employees.EmployeeAddresses != null)
-                    foreach (var addy in employees.EmployeeAddresses)
-                    {
-                        saveData.EmployeeAddresses!.Add(addy);
-                    }
-            }
-
-            await _employeeDbContext.SaveChangesAsync();
-
-            return StatusCode(200);
-
+            var result = await _employeeService.CreateEmployee(employees);
+            return result == null ? StatusCode(200, "Employee was NOT created") : StatusCode(200, result);
         }
         catch (Exception e)
         {
-            return StatusCode(500, e.InnerException?.Message);
+            return StatusCode(500, e.Message);
         }
     }
 
@@ -154,30 +107,13 @@ public class EmployeesController : Controller
     [HttpPut, HttpPatch]
     public async Task<IActionResult> EditEmployee(Employees data)
     {
-        //TODO: Add the employee Edit to EmployeeLibrary
-        if (_employeeDbContext.Employees == null) return BadRequest(data);
-
-        var employees = await _employeeDbContext.Employees.FindAsync(data.EmployeeId);
-
-        if (employees == null)
-        {
-            return NotFound();
-        }
-
         try
         {
-            _employeeDbContext.Update(data);
-            await _employeeDbContext.SaveChangesAsync();
-
-            return StatusCode(200, data);
+            var result = await _employeeService.EditEmployee(data);
+            return result == null ? StatusCode(200, "No employees found.") : StatusCode(200, result);
         }
-        catch (DbUpdateConcurrencyException ex)
+        catch (Exception ex)
         {
-            if (_employeeDbContext.Employees != null && 
-                !_employeeDbContext.Employees.Any(e => e.EmployeeId == data.EmployeeId))
-            {
-                return NotFound(data);
-            }
             return StatusCode(500, ex.Message);
         }
 
@@ -192,20 +128,15 @@ public class EmployeesController : Controller
     [HttpDelete("id")]
     public async Task<IActionResult> DeleteEmployee(int id)
     {
-        if (_employeeDbContext.Employees != null)
+        try
         {
-            var employee = await _employeeDbContext.Employees.FindAsync(id);
-            if (employee == null)
-            {
-                return NotFound();
-            }
-
-            _employeeDbContext.Employees.Remove(employee);
+            var result = await _employeeService.DeleteEmployee(id);
+            return result == false ? StatusCode(200, "No employees found.") : StatusCode(200, $"Employee id {id} has been deleted.");
         }
-
-        await _employeeDbContext.SaveChangesAsync();
-
-        return NoContent();
+        catch (Exception ex)
+        {
+            return StatusCode(500, ex.Message);
+        }
     }
 
 }

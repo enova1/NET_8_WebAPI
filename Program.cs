@@ -1,6 +1,4 @@
-using DataAccess;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.OpenApi.Models;
+using ExampleLibrary;
 
 namespace WebApi;
 
@@ -21,12 +19,12 @@ public static class Program
                 Version = "v1",
                 Title = "Web API",
                 Description = "This Api Microservice is for demonstration purposed only.",
-                TermsOfService = new Uri("https://blazorui20230314133145.azurewebsites.net/privacy-policy"),
+                //TermsOfService = new Uri("https://blazorui20230314133145.azurewebsites.net/privacy-policy"),
                 Contact = new OpenApiContact
                 {
                     Name = "API Support",
                     Email = "lazer8701@gmail.com",
-                    Url = new Uri("https://blazorui20230314133145.azurewebsites.net")
+                   // Url = new Uri("https://blazorui20230314133145.azurewebsites.net")
                 }
             });
             c.ResolveConflictingActions(apiDescriptions => apiDescriptions.First());
@@ -40,10 +38,8 @@ public static class Program
                     .AllowAnyHeader());
         });
 
-        //builder.Services.AddDbContext<ApplicationDbContext>();
-        //builder.Services.AddDbContext<EmployeeDbContext>();
 
-        IConfigurationRoot configuration = new ConfigurationBuilder()
+        var configuration = new ConfigurationBuilder()
             .SetBasePath(Directory.GetCurrentDirectory())
             .AddJsonFile("appsettings.json")
             .Build();
@@ -51,6 +47,9 @@ public static class Program
 
         builder.Services.AddDbContext<ApplicationDbContext>(options =>
             options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+
+        builder.Services.AddScoped<IEmployee, Employee>();
 
         // Add services to the container.
         var app = builder.Build();
