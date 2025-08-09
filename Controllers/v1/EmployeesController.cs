@@ -1,5 +1,6 @@
 ﻿using ExampleLibrary;
 using Models.Employee;
+using System.Linq;
 
 
 namespace WebApi.Controllers.v1;
@@ -60,10 +61,10 @@ public class EmployeesController : Controller
                 FullName = $"{e.FirstName} {e.LastName}",
                 EarliestHireDate = e.HireDate,
                 LatestHireDate = e.HireDate,
-                AverageLengthOfEmployment = (DateTime.Now - e.HireDate).TotalDays / 365
-            }).ToList();
+                AverageLengthOfEmployment = (DateTime.Now - (DateTime.TryParse(e.HireDate, out var dt) ? dt : DateTime.MinValue)).TotalDays / 365
+           }).ToList();
         return employees.Count == 0 ? StatusCode(200, "No employees found.") : StatusCode(200, employees);
-    }
+    } 
 
     /// <summary>
     /// Get an employee by their employeeId from the database.
