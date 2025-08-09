@@ -1,6 +1,5 @@
 // Global using directives
 
-global using DataAccess;
 global using Microsoft.AspNetCore.Mvc;
 global using Microsoft.AspNetCore.Mvc.ModelBinding;
 global using Microsoft.EntityFrameworkCore;

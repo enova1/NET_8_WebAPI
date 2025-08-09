@@ -1,5 +1,6 @@
 using ExampleLibrary;
 using WebApi.Middleware;
+using static System.Collections.Specialized.BitVector32;
 
 namespace WebApi;
 
@@ -19,40 +20,49 @@ public static class Program
             {
                 Version = "v1",
                 Title = "Web API",
-                Description = "This Api Microservice is for demonstration purposed only.",
-                //TermsOfService = new Uri("https://blazorui20230314133145.azurewebsites.net/privacy-policy"),
+                Description = "This Api is for demonstration purposed only.",
+                //TermsOfService = new Uri("https://ctate-gbhta6fedebjfcf9.canadaeast-01.azurewebsites.net/privacy-policy"),
                 Contact = new OpenApiContact
                 {
                     Name = "API Support",
-                    Email = "lazer8701@gmail.com",
-                   // Url = new Uri("https://blazorui20230314133145.azurewebsites.net")
+                    Email = "xXClearwaterXx@gmail.com",
+                    Url = new Uri("https://ctate-gbhta6fedebjfcf9.canadaeast-01.azurewebsites.net/")
                 }
             });
             c.ResolveConflictingActions(apiDescriptions => apiDescriptions.First());
         });
+
+        var configuration = builder.Configuration;
+        var origins = configuration.GetSection("AllowedOrigins");
+        var allowedOriginList = new List<string>();
+        var i = 0;
+        while (true)
+        {
+            var value = origins.GetSection(i.ToString()).Value;
+            if (string.IsNullOrEmpty(value))
+            {
+                break;
+            }
+            allowedOriginList.Add(value);
+            i++;
+        }
+        var allowedOrigins = allowedOriginList.ToArray();
         builder.Services.AddCors(options =>
         {
             options.AddPolicy("AllowSpecificOrigin",
                 build => build
-                    .WithOrigins("https://localhost:7007", "https://localhost:5173") // Allow only this origin can be changed to allow multiple origins with a list of strings
+                    .WithOrigins(allowedOrigins)
                     .AllowAnyMethod()
                     .AllowAnyHeader());
         });
 
 
-        var configuration = new ConfigurationBuilder()
-            .SetBasePath(Directory.GetCurrentDirectory())
-            .AddJsonFile("appsettings.json")
-            .Build();
-        builder.Services.AddSingleton<IConfiguration>(configuration);
+        
 
-        builder.Services.AddDbContext<ApplicationDbContext>(options =>
-            options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
-
-
-        builder.Services.AddScoped<IApplicationDbContext, ApplicationDbContext>();
-        builder.Services.AddScoped<IEmployee, Employee>();
-
+        // Only reference the logic layer all Dependency Injection for this library is done here.
+        builder.Services.AddExampleLibrary(
+            configuration.GetConnectionString("DefaultConnection")
+        );
         // Add services to the container.
         var app = builder.Build();
 
