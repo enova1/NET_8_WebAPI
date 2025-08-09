@@ -7,3 +7,6 @@
 /hangfire.db-shm
 /hangfire.db-wal
 /.vs/VSWorkspaceState.json
+/.config
+/bin/Release/net8.0
+/Properties
